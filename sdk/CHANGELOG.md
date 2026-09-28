@@ -7,6 +7,7 @@
 - The legacy provider-settings migration no longer adds an empty `sapaicore` entry to `providers.json`. It used to do this for every migrated user, because the extension writes `sapAiCoreUseOrchestrationMode` as a default
 - `@cline/core` exports `parseMcpHeaders`, used by the CLI's `mcp add` wizard to keep `--header` values
 - Refreshed the model catalog. Adds Claude Haiku 5.5. Default models change for Google Vertex AI (Claude Sonnet 5.5 → Claude Haiku 5.5), Cortecs, DevPass (LLM Gateway), Eden AI, GitHub Copilot, LLM Gateway, NanoGPT, OpenCode Go, Requesty, and Vivgrid (most now Claude Haiku 5.5)
+- Stopping or disposing a session now discards its queued prompts instead of racing them. Teardown aborts the in-flight turn, and the abort settling reset `aborting` and scheduled a queue drain while shutdown was still awaiting I/O, so a slow shutdown let a queued prompt start a new run in the dying session, whose events nobody received any more (in VS Code, switching tasks or starting a new one), and the persisted status ended `running`. Teardown now empties the queue and turns away prompts queued while it is in progress, a turn still preparing when teardown starts settles as aborted before reaching the model, and turns settling during teardown no longer overwrite its terminal status with `idle` or `running`. A plain abort still keeps the queue and drains it once the abort settles
 
 ## 0.0.91
 
